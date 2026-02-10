@@ -22,10 +22,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, phone?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  sendOTP: (phone: string) => Promise<void>;
+  verifyOTP: (phone: string, otp: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -106,14 +108,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const signup = async (email: string, password: string) => {
+  const signup = async (email: string, password: string, phone?: string) => {
     validateEmail(email);
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: window.location.origin },
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: {
+          phone: phone || "",
+        }
+      },
     });
     if (error) throw error;
+    // Profile will be auto-created by the database trigger
   };
 
   const logout = async () => {
@@ -137,6 +145,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session?.user) await fetchProfile(session.user);
   };
 
+  const sendOTP = async (phone: string) => {
+    // Use Supabase phone auth
+    const { error } = await supabase.auth.signInWithOtp({
+      phone,
+    });
+    if (error) throw error;
+  };
+
+  const verifyOTP = async (phone: string, otp: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      phone,
+      token: otp,
+      type: "sms",
+    });
+    if (error) throw error;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -149,6 +174,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         updateProfile,
         refreshProfile,
+        sendOTP,
+        verifyOTP,
       }}
     >
       {children}
