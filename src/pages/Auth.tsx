@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Car, ArrowRight, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Car, ArrowRight, Mail, Lock, Eye, EyeOff, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,8 +11,11 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { login, signup, isLoading } = useAuth();
+  const [showOTP, setShowOTP] = useState(false);
+  const [otp, setOtp] = useState("");
+  const { login, signup, isLoading, sendOTP, verifyOTP } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -21,10 +24,23 @@ const Auth = () => {
     try {
       if (isLogin) {
         await login(email, password);
+        navigate("/");
       } else {
-        await signup(email, password);
+        // For signup, send OTP to phone first
+        if (!showOTP) {
+          await signup(email, password, phone);
+          await sendOTP(phone);
+          setShowOTP(true);
+          toast({
+            title: "OTP Sent",
+            description: "Check your SMS for the verification code",
+          });
+        } else {
+          // Verify OTP
+          await verifyOTP(phone, otp);
+          navigate("/profile-setup");
+        }
       }
-      navigate("/");
     } catch (err: any) {
       toast({
         title: "Error",
@@ -57,39 +73,103 @@ const Auth = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="email"
-              placeholder="your.name@srmist.edu.in"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-12 bg-card"
-              required
-            />
-          </div>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 pr-10 h-12 bg-card"
-              required
-              minLength={6}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
+          {!isLogin && !showOTP && (
+            <>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="your.name@srmist.edu.in"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10 h-12 bg-card"
+                  required
+                />
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10 pr-10 h-12 bg-card"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="tel"
+                  placeholder="+91 9876543210"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="pl-10 h-12 bg-card"
+                  required
+                />
+              </div>
+            </>
+          )}
+
+          {!isLogin && showOTP && (
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Enter 6-digit OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.slice(0, 6))}
+                className="pl-10 h-12 bg-card text-center text-2xl tracking-widest"
+                maxLength={6}
+                required
+              />
+            </div>
+          )}
+
+          {isLogin && (
+            <>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="your.name@srmist.edu.in"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10 h-12 bg-card"
+                  required
+                />
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10 pr-10 h-12 bg-card"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </>
+          )}
 
           <Button type="submit" className="w-full h-12 text-base font-semibold gap-2" disabled={isLoading}>
-            {isLoading ? "Please wait..." : isLogin ? "Log in" : "Sign up"}
+            {isLoading ? "Please wait..." : isLogin ? "Log in" : showOTP ? "Verify OTP" : "Sign up"}
             {!isLoading && <ArrowRight className="w-4 h-4" />}
           </Button>
         </form>
@@ -102,7 +182,11 @@ const Auth = () => {
 
         <div className="text-center mt-4">
           <button
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setShowOTP(false);
+              setOtp("");
+            }}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             {isLogin ? "Don't have an account? Sign up" : "Already have an account? Log in"}
