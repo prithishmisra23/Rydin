@@ -8,14 +8,20 @@ ALTER TABLE rides
 ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open' CHECK(status IN ('open', 'full', 'locked', 'completed', 'cancelled')),
 ADD COLUMN IF NOT EXISTS locked_at TIMESTAMP;
 
--- 2. Add emergency contact fields to profiles
+-- 2. Add emergency contact fields and reliability tracking to profiles
 ALTER TABLE profiles
 ADD COLUMN IF NOT EXISTS emergency_contact_name TEXT,
-ADD COLUMN IF NOT EXISTS emergency_contact_phone TEXT;
+ADD COLUMN IF NOT EXISTS emergency_contact_phone TEXT,
+ADD COLUMN IF NOT EXISTS no_show_count INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS reliability_score INT DEFAULT 100,
+ADD COLUMN IF NOT EXISTS completed_rides INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS last_no_show_at TIMESTAMP,
+ADD COLUMN IF NOT EXISTS no_show_cleared_at TIMESTAMP;
 
--- 3. Add payment_status to ride_members
+-- 3. Add payment_status and commitment_acknowledged to ride_members
 ALTER TABLE ride_members
-ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pending' CHECK(payment_status IN ('pending', 'paid'));
+ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pending' CHECK(payment_status IN ('pending', 'paid')),
+ADD COLUMN IF NOT EXISTS commitment_acknowledged BOOLEAN DEFAULT FALSE;
 
 -- 4. Create RPC function for atomic ride joining
 CREATE OR REPLACE FUNCTION join_ride(ride_id UUID, user_id UUID)
@@ -74,6 +80,44 @@ CREATE INDEX IF NOT EXISTS idx_rides_host_id ON rides(host_id);
 CREATE INDEX IF NOT EXISTS idx_ride_members_user_id ON ride_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_ride_members_ride_id ON ride_members(ride_id);
 
--- 6. Enable realtime for ride_members (for live seat updates)
+-- 6. Add bucket tracking columns to rides
+ALTER TABLE rides
+ADD COLUMN IF NOT EXISTS bucket_id TEXT,
+ADD COLUMN IF NOT EXISTS bucket_name TEXT;
+
+-- 7. Create ride_memories table for ride history
+CREATE TABLE IF NOT EXISTS ride_memories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ride_id UUID NOT NULL REFERENCES rides(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  date TEXT,
+  source TEXT,
+  destination TEXT,
+  amount_paid NUMERIC,
+  amount_saved NUMERIC,
+  total_cost NUMERIC,
+  passengers JSONB, -- Array of {name, trustScore, department}
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+
+-- 8. Create ride_parent_shares table for safety tracking
+CREATE TABLE IF NOT EXISTS ride_parent_shares (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  ride_id UUID NOT NULL REFERENCES rides(id) ON DELETE CASCADE,
+  shared_at TIMESTAMP DEFAULT now()
+);
+
+-- 9. Enable realtime for ride_members and rides (for live seat updates)
 ALTER PUBLICATION supabase_realtime ADD TABLE ride_members;
 ALTER PUBLICATION supabase_realtime ADD TABLE rides;
+ALTER PUBLICATION supabase_realtime ADD TABLE ride_memories;
+
+-- 10. Create indexes for new tables
+CREATE INDEX IF NOT EXISTS idx_ride_memories_user_id ON ride_memories(user_id);
+CREATE INDEX IF NOT EXISTS idx_ride_memories_ride_id ON ride_memories(ride_id);
+CREATE INDEX IF NOT EXISTS idx_ride_parent_shares_user_id ON ride_parent_shares(user_id);
+CREATE INDEX IF NOT EXISTS idx_rides_bucket_id ON rides(bucket_id);

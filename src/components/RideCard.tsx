@@ -5,11 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import RideDetailsModal from "./RideDetailsModal";
+import RideMatchReason from "./RideMatchReason";
 import { calculateRideStatus, getStatusConfig } from "@/lib/rideStatus";
+import { getMatchReason } from "@/lib/rideBuckets";
 import type { Ride } from "@/data/mockRides";
 
 interface RideCardProps {
-  ride: Ride & { status?: string };
+  ride: Ride & { status?: string; bucket_name?: string };
   index: number;
   onJoin?: (id: string) => void;
   onDetails?: (id: string) => void;
@@ -49,24 +51,32 @@ const RideCard = ({ ride, index, onJoin, onDetails, isHost, isJoined }: RideCard
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: index * 0.05 }}
-        className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+        className="bg-card border border-border rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
         onClick={() => setDetailsOpen(true)}
       >
         {/* Route */}
-        <div className="flex items-start gap-3 mb-3">
+        <div className="flex items-start gap-2 sm:gap-3 mb-3">
           <div className="flex flex-col items-center gap-1 mt-1">
             <div className="w-2 h-2 rounded-full bg-primary" />
             <div className="w-0.5 h-6 bg-border" />
             <div className="w-2 h-2 rounded-full bg-foreground" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-muted-foreground truncate">{ride.source}</p>
-            <p className="text-base font-semibold font-display truncate mt-1">{ride.destination}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">{ride.source}</p>
+            <p className="text-sm sm:text-base font-semibold font-display truncate mt-1">{ride.destination}</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-lg font-bold font-display text-primary">₹{farePerPerson}</p>
+            <p className="text-base sm:text-lg font-bold font-display text-primary">₹{farePerPerson}</p>
             <p className="text-xs text-muted-foreground">/person</p>
           </div>
+        </div>
+
+        {/* Match Reason */}
+        <div className="mb-3">
+          <RideMatchReason
+            reason={getMatchReason(ride.source, ride.destination, ride.flightTrain)}
+            bucketName={ride.bucket_name}
+          />
         </div>
 
         {/* Animated Seat Indicator */}
@@ -91,7 +101,7 @@ const RideCard = ({ ride, index, onJoin, onDetails, isHost, isJoined }: RideCard
         </div>
 
         {/* Meta */}
-        <div className="flex flex-wrap items-center gap-2 mb-3 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-3 text-xs sm:text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
             {ride.date.slice(5)} · {ride.time}
@@ -108,8 +118,8 @@ const RideCard = ({ ride, index, onJoin, onDetails, isHost, isJoined }: RideCard
           )}
         </div>
 
-        {/* Status Badge & Host */}
-        <div className="flex items-center justify-between">
+        {/* Status Badge & Host - Responsive Layout */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="outline" className={`text-xs ${statusConfig.color}`}>
               {statusConfig.label}
@@ -124,10 +134,8 @@ const RideCard = ({ ride, index, onJoin, onDetails, isHost, isJoined }: RideCard
               {ride.hostRating} · {ride.hostName}
             </span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
-              size="sm"
-              variant={buttonState.variant}
               onClick={(e) => {
                 e.stopPropagation();
                 if (buttonState.label === "Join" && onJoin) {
@@ -135,11 +143,12 @@ const RideCard = ({ ride, index, onJoin, onDetails, isHost, isJoined }: RideCard
                 }
               }}
               disabled={!statusConfig.canJoin && buttonState.label === "Join"}
-              className="h-8 text-xs font-semibold"
+              variant={buttonState.variant}
+              className="flex-1 sm:flex-none h-10 sm:h-8 text-sm sm:text-xs font-semibold"
             >
               {buttonState.label}
             </Button>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <ChevronRight className="w-5 h-5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
           </div>
         </div>
       </motion.div>

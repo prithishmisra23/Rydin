@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import RideCard from "@/components/RideCard";
 import BottomNav from "@/components/BottomNav";
+import PlatformDisclaimer from "@/components/PlatformDisclaimer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,25 +119,25 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 bg-background/80 backdrop-blur-md z-40 border-b border-border">
-        <div className="max-w-lg mx-auto px-4 py-3">
+        <div className="max-w-lg mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h1 className="text-xl font-bold font-display">Rydin</h1>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <h1 className="text-xl sm:text-2xl font-bold font-display">Rydin</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
                 <MapPin className="w-3 h-3" /> SRM Campus
               </p>
             </div>
-            <Button variant="outline" size="icon" className="h-9 w-9">
+            <Button variant="outline" size="icon" className="h-10 w-10 sm:h-9 sm:w-9">
               <Filter className="w-4 h-4" />
             </Button>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
             {filters.map((f) => (
               <Badge
                 key={f}
                 variant={activeFilter === f ? "default" : "outline"}
-                className="cursor-pointer shrink-0 transition-colors"
+                className="cursor-pointer shrink-0 transition-colors text-xs sm:text-sm"
                 onClick={() => setActiveFilter(f)}
               >
                 {f}
@@ -146,17 +147,17 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-4 space-y-3">
+      <main className="max-w-lg mx-auto px-4 sm:px-6 py-4 space-y-3">
         {/* Savings Counter Banner */}
         {totalSavings > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center gap-2"
+            className="bg-primary/10 border border-primary/20 rounded-lg p-2 sm:p-3 flex items-center gap-2"
           >
-            <TrendingDown className="w-4 h-4 text-primary" />
+            <TrendingDown className="w-4 h-4 text-primary shrink-0" />
             <div>
-              <p className="text-xs font-semibold text-primary">
+              <p className="text-xs sm:text-sm font-semibold text-primary">
                 ₹{totalSavings.toLocaleString()} saved collectively
               </p>
               <p className="text-xs text-muted-foreground">Across all active rides</p>
@@ -164,8 +165,8 @@ const Index = () => {
           </motion.div>
         )}
 
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {loading ? "Loading..." : `${filteredRides.length} ride${filteredRides.length !== 1 ? "s" : ""} available`}
           </p>
         </div>
@@ -207,6 +208,9 @@ const Index = () => {
             <p className="text-sm">Try a different filter or create a new ride</p>
           </motion.div>
         )}
+
+        {/* Platform Disclaimer */}
+        <PlatformDisclaimer variant="footer" />
       </main>
 
       <BottomNav />

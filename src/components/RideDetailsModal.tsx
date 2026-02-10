@@ -84,9 +84,9 @@ const RideDetailsModal = ({ rideId, open, onOpenChange, ride }: RideDetailsModal
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-card border-border">
-        <DialogHeader>
-          <DialogTitle>Ride Details</DialogTitle>
+      <DialogContent className="w-full max-w-md sm:max-w-md max-h-[90vh] bg-card border-border p-4 sm:p-6">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-xl sm:text-2xl">Ride Details</DialogTitle>
         </DialogHeader>
 
         {loading ? (
