@@ -56,15 +56,21 @@ export const useRealtimeRides = (filters?: {
         });
 
         if (fetchError) {
-          console.error("Supabase fetch error:", fetchError);
-          throw fetchError;
+          const errorMsg = fetchError.message || JSON.stringify(fetchError);
+          console.error("Supabase fetch error:", errorMsg);
+          console.error("Full error object:", fetchError);
+          throw new Error(`Supabase: ${errorMsg}`);
         }
         setRides(data as unknown as RideWithHost[]);
         setError(null);
       } catch (err) {
-        console.error("useRealtimeRides error:", err);
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        setError(new Error(`Failed to fetch rides: ${errorMessage}`));
+        const errorDetail = err instanceof Error
+          ? err.message
+          : err && typeof err === 'object'
+            ? JSON.stringify(err)
+            : String(err);
+        console.error("useRealtimeRides error details:", errorDetail);
+        setError(new Error(`Failed to fetch rides: ${errorDetail}`));
       } finally {
         setLoading(false);
       }
@@ -132,10 +138,19 @@ export const useRealtimeRideMembers = (rideId: string) => {
           .select("*, profiles:user_id(name, trust_score, department, phone)")
           .eq("ride_id", rideId);
 
-        if (error) throw error;
+        if (error) {
+          const errorMsg = error.message || JSON.stringify(error);
+          console.error("Error fetching members:", errorMsg);
+          throw error;
+        }
         setMembers(data || []);
       } catch (err) {
-        console.error("Error fetching members:", err);
+        const errorDetail = err instanceof Error
+          ? err.message
+          : err && typeof err === 'object'
+            ? JSON.stringify(err)
+            : String(err);
+        console.error("useRealtimeRideMembers error:", errorDetail);
       } finally {
         setLoading(false);
       }

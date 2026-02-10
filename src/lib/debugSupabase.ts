@@ -1,0 +1,98 @@
+import { supabase } from "@/integrations/supabase/client";
+
+export const debugSupabase = async () => {
+  console.log("🔍 Starting Supabase Diagnostic...\n");
+
+  try {
+    // 1. Check connection
+    console.log("1️⃣  Testing connection to Supabase...");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError) {
+      console.error("❌ Auth error:", authError.message);
+    } else {
+      console.log("✅ Connected to Supabase");
+      console.log("   User:", user?.email || "Not authenticated");
+    }
+
+    // 2. Check rides table exists
+    console.log("\n2️⃣  Checking rides table...");
+    const { data: ridesData, error: ridesError, count: ridesCount } = await supabase
+      .from("rides")
+      .select("*", { count: "exact", head: true });
+    
+    if (ridesError) {
+      console.error("❌ Rides table error:", ridesError.message);
+      console.error("   Details:", ridesError);
+    } else {
+      console.log("✅ Rides table exists");
+      console.log(`   Total rides: ${ridesCount}`);
+    }
+
+    // 3. Check profiles table
+    console.log("\n3️⃣  Checking profiles table...");
+    const { data: profilesData, error: profilesError, count: profilesCount } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true });
+    
+    if (profilesError) {
+      console.error("❌ Profiles table error:", profilesError.message);
+    } else {
+      console.log("✅ Profiles table exists");
+      console.log(`   Total profiles: ${profilesCount}`);
+    }
+
+    // 4. Check ride_members table
+    console.log("\n4️⃣  Checking ride_members table...");
+    const { data: membersData, error: membersError, count: membersCount } = await supabase
+      .from("ride_members")
+      .select("*", { count: "exact", head: true });
+    
+    if (membersError) {
+      console.error("❌ Ride members table error:", membersError.message);
+    } else {
+      console.log("✅ Ride members table exists");
+      console.log(`   Total memberships: ${membersCount}`);
+    }
+
+    // 5. Check messages table
+    console.log("\n5️⃣  Checking messages table...");
+    const { data: messagesData, error: messagesError, count: messagesCount } = await supabase
+      .from("messages")
+      .select("*", { count: "exact", head: true });
+    
+    if (messagesError) {
+      console.error("❌ Messages table error:", messagesError.message);
+    } else {
+      console.log("✅ Messages table exists");
+      console.log(`   Total messages: ${messagesCount}`);
+    }
+
+    // 6. Test a simple query with joins
+    console.log("\n6️⃣  Testing ride query with joins...");
+    const { data: testRides, error: joinError } = await supabase
+      .from("rides")
+      .select("id, source, destination, profiles!rides_host_id_fkey(name, trust_score)")
+      .limit(1);
+    
+    if (joinError) {
+      console.error("❌ Join query error:", joinError.message);
+      console.error("   This means the foreign key or RLS policies might be misconfigured");
+    } else {
+      console.log("✅ Join queries work");
+      if (testRides && testRides.length > 0) {
+        console.log("   Sample ride:", testRides[0]);
+      } else {
+        console.log("   (No rides in database yet)");
+      }
+    }
+
+    console.log("\n✅ Diagnostic complete!");
+  } catch (err) {
+    console.error("❌ Diagnostic error:", err);
+  }
+};
+
+// Run diagnostic on page load (development only)
+if (process.env.NODE_ENV === "development") {
+  console.log("Run 'debugSupabase()' in console to diagnose Supabase connection");
+}

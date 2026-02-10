@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeRides } from "@/hooks/useRealtimeRides";
 import { joinRideAtomic, calculateRideSavings } from "@/lib/database";
+import { debugSupabase } from "@/lib/debugSupabase";
 
 const filters = ["All", "Airport", "Station", "Girls Only"];
 
@@ -20,6 +21,12 @@ const Index = () => {
   const [totalSavings, setTotalSavings] = useState(0);
   const { session, user } = useAuth();
   const { toast } = useToast();
+
+  // Make debug function available in console
+  useEffect(() => {
+    (window as any).debugSupabase = debugSupabase;
+    console.log("💡 Tip: Run debugSupabase() in the console to diagnose Supabase connection");
+  }, []);
 
   // Use real-time rides hook
   const { rides, loading, error: ridesError } = useRealtimeRides({
@@ -149,11 +156,18 @@ const Index = () => {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm"
+            className="bg-red-50 border-2 border-red-300 rounded-lg p-4 text-red-900 text-sm space-y-2"
           >
-            <p className="font-semibold">Connection Error</p>
-            <p className="text-xs mt-1">{ridesError.message}</p>
-            <p className="text-xs mt-2 text-red-600">Please check your Supabase configuration in src/integrations/supabase/client.ts or ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables are set.</p>
+            <p className="font-bold text-red-700">⚠️ Database Connection Error</p>
+            <div className="bg-red-100 p-3 rounded font-mono text-xs overflow-auto max-h-24">
+              {ridesError.message}
+            </div>
+            <div className="text-xs space-y-1">
+              <p>✓ Check browser console (F12) for detailed error</p>
+              <p>✓ Ensure SQL migrations were run in Supabase</p>
+              <p>✓ Verify rides table exists with proper columns</p>
+              <p>✓ Check RLS policies are configured</p>
+            </div>
           </motion.div>
         )}
 
