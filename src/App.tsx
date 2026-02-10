@@ -11,6 +11,7 @@ import ProfileSetup from "./pages/ProfileSetup";
 import CreateRide from "./pages/CreateRide";
 import Events from "./pages/Events";
 import Hopper from "./pages/Hopper";
+import Travel from "./pages/Travel";
 import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
 import Search from "./pages/Search";
@@ -76,6 +77,7 @@ const AppRoutes = () => (
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
     <Route path="/hopper" element={<ProtectedRoute><Hopper /></ProtectedRoute>} />
+    <Route path="/travel" element={<ProtectedRoute><Travel /></ProtectedRoute>} />
     <Route path="/create" element={<ProtectedRoute><CreateRide /></ProtectedRoute>} />
     <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
     <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
